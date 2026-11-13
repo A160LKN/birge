@@ -1,0 +1,72 @@
+.page {
+  flex: 1;
+  display: grid;
+  grid-template-columns: minmax(0, 1.1fr) minmax(320px, 420px);
+  gap: var(--space-7);
+  align-items: center;
+  width: 100%;
+  max-width: 1080px;
+  margin: 0 auto;
+  padding: var(--space-7) var(--space-4);
+}
+.headline {
+  font-size: clamp(2rem, 4.5vw, 3.25rem);
+  line-height: 1.05;
+  letter-spacing: -0.025em;
+  max-width: 14ch;
+}
+.lead {
+  margin-top: var(--space-4);
+  font-size: var(--text-lg);
+  color: var(--ink-muted);
+  max-width: 46ch;
+}
+.beads {
+  margin-top: var(--space-6);
+  width: min(320px, 100%);
+  color: var(--line-strong);
+}
+.formCard {
+  padding: var(--space-6) var(--space-5);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+.switch {
+  font-size: var(--text-sm);
+  color: var(--ink-muted);
+}
+.demo {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-3);
+  padding-top: var(--space-4);
+  border-top: 1px dashed var(--line);
+  font-size: var(--text-sm);
+  color: var(--ink-muted);
+}
+.demo code {
+  font-family: inherit;
+  font-weight: 600;
+  color: var(--ink);
+}
+@media (max-width: 860px) {
+  .page {
+    grid-template-columns: 1fr;
+    gap: var(--space-5);
+    padding-top: var(--space-5);
+  }
+  .lead,
+  .beads {
+    display: none;
+  }
+}

@@ -1,0 +1,330 @@
+/* ---------- Колонки ---------- */
+.lanes {
+  /* position: relative удерживает внутри скролла даже невидимые подписи для экранных дикторов —
+     иначе они растягивали страницу на телефоне (нашёл E2E-тест мобильной вёрстки) */
+  position: relative;
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+  padding: var(--space-2) var(--space-4) var(--space-5);
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  scroll-snap-type: x proximity;
+}
+.lane {
+  flex: 0 0 var(--column-width);
+  display: flex;
+  flex-direction: column;
+  max-height: 100%;
+  border-radius: var(--radius-lg);
+  background: var(--lane);
+  scroll-snap-align: start;
+}
+.laneHeader {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-2) var(--space-2) var(--space-4);
+}
+.laneTitle {
+  flex: 1;
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-2);
+  font-size: var(--text-md);
+  font-weight: 600;
+  letter-spacing: 0;
+  cursor: default;
+  overflow-wrap: anywhere;
+}
+.laneCount {
+  font-family: var(--font-body);
+  font-size: var(--text-sm);
+  font-weight: 500;
+  color: var(--ink-faint);
+}
+.laneForm {
+  flex: 1;
+}
+.laneForm input,
+.newLane input {
+  width: 100%;
+  height: 32px;
+  padding: 0 var(--space-2);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  font-weight: 600;
+}
+.cards {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  min-height: 12px;
+  margin: 0;
+  padding: var(--space-1) var(--space-2) var(--space-2);
+  list-style: none;
+  overflow-y: auto;
+  border-radius: var(--radius-md);
+  transition: background-color 0.15s;
+}
+.over {
+  background: color-mix(in srgb, var(--ink) 5%, transparent);
+}
+.newLane {
+  flex: 0 0 var(--column-width);
+  display: flex;
+  gap: var(--space-1);
+  padding: var(--space-2);
+  border: 1px dashed var(--line-strong);
+  border-radius: var(--radius-lg);
+}
+.newLane input {
+  border-color: transparent;
+  background: transparent;
+  font-weight: 500;
+}
+.newLane input:focus {
+  background: var(--surface);
+  border-color: var(--line-strong);
+}
+
+/* ---------- Карточка ---------- */
+.cardButton {
+  display: block;
+  width: 100%;
+  padding: 0;
+  border: 0;
+  background: none;
+  text-align: left;
+  cursor: grab;
+  touch-action: manipulation;
+  border-radius: var(--radius-md);
+}
+.cardButton:active {
+  cursor: grabbing;
+}
+.card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-3);
+  border-radius: var(--radius-md);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  box-shadow: var(--shadow-card);
+  transition:
+    border-color 0.15s,
+    box-shadow 0.15s;
+}
+.cardButton:hover .card {
+  border-color: var(--line-strong);
+}
+.placeholder {
+  opacity: 0.35;
+}
+.lifted {
+  transform: rotate(1.5deg);
+  box-shadow: var(--shadow-lift);
+  cursor: grabbing;
+}
+.cover {
+  width: calc(100% + 2 * var(--space-3) + 2px);
+  max-width: none;
+  margin: calc(-1 * var(--space-3) - 1px) calc(-1 * var(--space-3) - 1px) 0;
+  aspect-ratio: 16 / 9;
+  object-fit: cover;
+  border-radius: var(--radius-md) var(--radius-md) 0 0;
+}
+.cardTitle {
+  font-size: var(--text-md);
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+.meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2) var(--space-3);
+  font-size: var(--text-xs);
+  color: var(--ink-muted);
+}
+.count,
+.due {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.due {
+  padding: 1px 6px;
+  border-radius: var(--radius-full);
+  background: var(--surface-sunken);
+}
+.overdue {
+  background: var(--danger-soft);
+  color: var(--danger);
+}
+.soon {
+  background: var(--warning-soft);
+  color: var(--warning);
+}
+.assignee {
+  margin-left: auto;
+}
+
+/* Чужое изменение: карточка на пару секунд в цвете человека и с его именем */
+.flash {
+  border-color: var(--person);
+  box-shadow: 0 0 0 2px var(--person);
+  animation: arrive 2.6s ease-out forwards;
+}
+.flag {
+  position: absolute;
+  top: -9px;
+  right: var(--space-2);
+  z-index: 1;
+  padding: 1px 8px;
+  border-radius: var(--radius-full);
+  background: var(--person);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 600;
+  animation: flag 2.6s ease-out forwards;
+}
+@keyframes arrive {
+  0% {
+    transform: scale(1.02);
+  }
+  12% {
+    transform: scale(1);
+  }
+  80% {
+    box-shadow: 0 0 0 2px var(--person);
+    border-color: var(--person);
+  }
+  100% {
+    box-shadow: 0 0 0 0 transparent;
+    border-color: var(--line);
+  }
+}
+@keyframes flag {
+  0%,
+  80% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+/* ---------- Добавление ---------- */
+.addCard {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin: 0 var(--space-2) var(--space-2);
+  padding: var(--space-2);
+  border: 0;
+  border-radius: var(--radius-md);
+  background: transparent;
+  color: var(--ink-muted);
+  font-size: var(--text-sm);
+  cursor: pointer;
+}
+.addCard:hover {
+  background: color-mix(in srgb, var(--ink) 6%, transparent);
+  color: var(--ink);
+}
+.addForm {
+  margin: 0 var(--space-2) var(--space-2);
+}
+.addForm textarea {
+  width: 100%;
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-md);
+  background: var(--surface);
+  resize: none;
+}
+.addActions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  margin-top: var(--space-1);
+}
+.addSubmit {
+  height: 32px;
+  padding: 0 var(--space-3);
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: var(--primary);
+  color: var(--primary-ink);
+  font-weight: 600;
+  font-size: var(--text-sm);
+  cursor: pointer;
+}
+
+/* ---------- Меню колонки ---------- */
+.iconButton {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--ink-muted);
+  cursor: pointer;
+}
+.iconButton:hover {
+  background: color-mix(in srgb, var(--ink) 8%, transparent);
+  color: var(--ink);
+}
+.menuWrap {
+  position: relative;
+}
+.menu {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 4px);
+  z-index: 10;
+  min-width: 180px;
+  margin: 0;
+  padding: var(--space-1);
+  list-style: none;
+  border-radius: var(--radius-md);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  box-shadow: var(--shadow-lift);
+}
+.menu button {
+  width: 100%;
+  padding: var(--space-2) var(--space-3);
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+}
+.menu button:hover {
+  background: var(--surface-sunken);
+}
+.menu .danger {
+  color: var(--danger);
+}
+
+@media (max-width: 600px) {
+  .lanes {
+    scroll-snap-type: x mandatory;
+    padding-inline: var(--space-3);
+  }
+  /* Колонка почти на всю ширину: соседняя выглядывает краем — видно, что доску можно листать.
+     Проценты, а не vw: vw на телефоне зависит от ширины страницы и может раздуть её */
+  .lane,
+  .newLane {
+    flex-basis: 86%;
+  }
+}

@@ -1,0 +1,35 @@
+# Бэкенд с базой одной командой: docker compose up --wait
+# Фронтенд запускается отдельно: cd frontend && npm install && npm run dev
+services:
+  db:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_USER: birge
+      POSTGRES_PASSWORD: birge
+      POSTGRES_DB: birge
+    ports:
+      - "5432:5432"   # тесты с компьютера подключаются к этой же БД (база birge_test)
+    volumes:
+      - ./backend/scripts/create-test-db.sql:/docker-entrypoint-initdb.d/create-test-db.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U birge"]
+      interval: 2s
+      timeout: 3s
+      retries: 20
+
+  api:
+    build: ./backend
+    environment:
+      DATABASE_URL: postgresql+psycopg://birge:birge@db:5432/birge
+      JWT_SECRET: local-docker-secret-at-least-32-bytes
+      CORS_ORIGINS: http://localhost:5173,http://localhost:4173
+    ports:
+      - "8000:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
+      interval: 2s
+      timeout: 3s
+      retries: 30

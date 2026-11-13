@@ -1,0 +1,27 @@
+.avatar {
+  display: inline-grid;
+  place-items: center;
+  flex: none;
+  border-radius: 50%;
+  background: var(--person);
+  color: #fff;
+  font-family: var(--font-display);
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  box-shadow: 0 0 0 2px var(--bg);
+}
+.sm {
+  width: 24px;
+  height: 24px;
+  font-size: 10px;
+}
+.md {
+  width: 32px;
+  height: 32px;
+  font-size: 12px;
+}
+.online {
+  box-shadow:
+    0 0 0 2px var(--bg),
+    0 0 0 4px var(--person);
+}
