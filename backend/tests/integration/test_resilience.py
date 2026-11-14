@@ -41,7 +41,8 @@ def _kill_listener() -> int:
     with sync_engine.begin() as conn:
         return conn.execute(text(
             "SELECT count(pg_terminate_backend(pid)) FROM pg_stat_activity "
-            "WHERE query = 'LISTEN board_events' AND datname = current_database() AND pid <> pg_backend_pid()")).scalar()
+            "WHERE query = 'LISTEN board_events' AND datname = current_database() "
+            "AND pid <> pg_backend_pid()")).scalar()
 
 
 @pytest.mark.api
