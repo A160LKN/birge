@@ -19,6 +19,12 @@ async def get_session() -> AsyncIterator[AsyncSession]:
         yield session
 
 
-def listen_dsn() -> str:
-    """Адрес для отдельного соединения LISTEN: psycopg принимает обычный postgresql://."""
-    return settings.database_url.replace("postgresql+psycopg://", "postgresql://", 1)
+def listen_dsn(url: str | None = None) -> str:
+    """Адрес для отдельного соединения LISTEN.
+
+    LISTEN не работает через пул соединений (PgBouncer в режиме транзакций): пул отдаёт серверное
+    соединение другому клиенту, и уведомления молча теряются. У Neon пул — это хост с «-pooler»,
+    а без этой части — прямое подключение к той же базе. Обычные запросы идут через пул, LISTEN — напрямую.
+    """
+    url = (url or settings.database_url).replace("postgresql+psycopg://", "postgresql://", 1)
+    return url.replace("-pooler.", ".", 1)

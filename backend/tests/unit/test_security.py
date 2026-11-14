@@ -84,3 +84,15 @@ def test_database_url_from_hosting_uses_psycopg(given, expected):
 def test_cors_origins_are_split_and_trimmed():
     assert Settings(cors_origins=" https://a.app , https://b.app,").cors_origin_list == ["https://a.app",
                                                                                          "https://b.app"]
+
+
+@pytest.mark.parametrize(("given", "expected"), [
+    # Neon: пул (-pooler) не пропускает LISTEN — для подписки на события подключаемся напрямую
+    ("postgresql+psycopg://u:p@ep-fancy-night-b92e5d3k-pooler.c-7.eu-central-1.aws.neon.tech/birge?sslmode=require",
+     "postgresql://u:p@ep-fancy-night-b92e5d3k.c-7.eu-central-1.aws.neon.tech/birge?sslmode=require"),
+    ("postgresql+psycopg://birge:birge@localhost:5432/birge", "postgresql://birge:birge@localhost:5432/birge"),
+])
+def test_listen_connection_bypasses_pooler(given, expected):
+    from app.db import listen_dsn
+
+    assert listen_dsn(given) == expected
