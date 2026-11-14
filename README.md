@@ -2,6 +2,8 @@
 
 [![CI](https://github.com/A160LKN/birge/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/A160LKN/birge/actions/workflows/ci.yml)
 
+**Русский** · [English](README.en.md)
+
 Fullstack-приложение: доски с колонками и карточками, которые обновляются у всех участников в реальном времени. Коллега перетащил карточку — у вас она переехала в ту же секунду, подсвеченная его цветом и подписанная его именем. Двое правят одно описание — никто не затрёт чужой текст молча. Картинки во вложениях получают превью, доска выгружается в CSV — всё это в фоне.
 
 **Бэкенд:** FastAPI (async), PostgreSQL, WebSocket, очередь фоновых задач на PostgreSQL
