@@ -22,6 +22,7 @@ from alembic.config import Config  # noqa: E402
 from fastapi.testclient import TestClient  # noqa: E402
 from sqlalchemy import create_engine, text  # noqa: E402
 
+from app import ratelimit  # noqa: E402
 from app.config import settings  # noqa: E402
 from app.db import SessionLocal, engine  # noqa: E402
 from app.jobs import tasks  # noqa: E402, F401 — регистрирует обработчики задач
@@ -69,6 +70,10 @@ async def db_session():
 
 @pytest.fixture
 def client():
+    # Счётчики попыток живут в памяти процесса — между тестами их сбрасываем
+    ratelimit.failed_logins.reset()
+    ratelimit.failed_logins_per_email.reset()
+    ratelimit.registrations.reset()
     with TestClient(app) as test_client:
         yield test_client
 

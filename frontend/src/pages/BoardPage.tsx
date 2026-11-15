@@ -160,16 +160,21 @@ function BoardHeader({ board, live }: { board: Board; live: Live }) {
         </p>
       </div>
       <div className={styles.actions}>
-        <button
-          type="button"
-          className={styles.people}
-          onClick={() => setPanel('members')}
-          aria-label={`Участники: ${board.members.length}, сейчас на доске: ${live.presence.length}`}
-        >
-          {board.members.slice(0, 5).map((m) => (
-            <Avatar key={m.user.id} user={m.user} online={online.has(m.user.id) && m.user.id !== user?.id} />
-          ))}
-          {board.members.length > 5 && <span className={styles.more}>+{board.members.length - 5}</span>}
+        <button type="button" className={styles.people} onClick={() => setPanel('members')}>
+          {/* Имя кнопки — текстом для скринридера; инициалы на аватарах — только для глаз */}
+          <span className="visually-hidden">
+            Участники: {board.members.length}, сейчас на доске: {live.presence.length}
+          </span>
+          <span aria-hidden="true" className={styles.avatars}>
+            {board.members.slice(0, 5).map((m) => (
+              <Avatar
+                key={m.user.id}
+                user={m.user}
+                online={online.has(m.user.id) && m.user.id !== user?.id}
+              />
+            ))}
+            {board.members.length > 5 && <span className={styles.more}>+{board.members.length - 5}</span>}
+          </span>
         </button>
         <Button variant="ghost" size="sm" onClick={() => setPanel('activity')}>
           <Icon name="activity" size={16} /> Лента

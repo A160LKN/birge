@@ -24,6 +24,10 @@ class Settings(BaseSettings):
     # События доски хранятся сутки: этого хватает, чтобы догнать пропущенное после обрыва связи
     event_retention_hours: int = 24
     ws_auth_timeout_seconds: float = 5.0
+    # Render ставит API за прокси: адрес клиента — в X-Forwarded-For. Локально заголовку не доверяем
+    trust_proxy: bool = False
+    login_attempts: int = 5  # неудачных входов за 15 минут на пару «email + IP»
+    registrations_per_hour: int = 10  # с одного IP
     timezone: str = "Asia/Almaty"  # время в выгрузке — местное, а не UTC
 
     @field_validator("database_url")

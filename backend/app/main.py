@@ -14,6 +14,7 @@ from app.config import settings
 from app.db import SessionLocal, engine, get_session
 from app.errors import AppError, PoolTimeout, app_error_handler, overload_handler
 from app.jobs.worker import worker_loop
+from app.middleware import HttpMiddleware
 from app.realtime import ws
 from app.realtime.hub import Hub
 from app.routers import auth, boards, cards
@@ -48,7 +49,8 @@ app = FastAPI(
 )
 app.add_middleware(CORSMiddleware, allow_origins=settings.cors_origin_list, allow_credentials=False,
                    allow_methods=["*"], allow_headers=["Authorization", "Content-Type", "X-Client-Id"],
-                   expose_headers=["Content-Disposition"])
+                   expose_headers=["Content-Disposition", "X-Request-ID", "Retry-After"])
+app.add_middleware(HttpMiddleware)  # заголовки безопасности, ID запроса, журнал, лимит размера тела
 app.add_exception_handler(AppError, app_error_handler)
 app.add_exception_handler(PoolTimeout, overload_handler)
 app.include_router(auth.router)

@@ -10,7 +10,7 @@ _Birge_ means "together" in Kazakh.
 
 **Backend:** FastAPI (async), PostgreSQL, WebSocket, a background job queue on PostgreSQL
 **Frontend:** React 19, TypeScript, TanStack Query, dnd-kit
-**Tests:** 196 backend, 83 frontend, 12 E2E running in two browsers at once
+**Tests:** 214 backend, 83 frontend, 14 E2E running in two browsers at once, including accessibility checks (axe) in light and dark themes
 
 ![Two windows side by side: Bauyrzhan moves a card to "In progress", and on Aliya's screen it moves by itself, highlighted in his colour](docs/screenshots/realtime.gif)
 
@@ -61,13 +61,13 @@ sequenceDiagram
 
 ## Tests
 
-| Level                         | Count | What they check                                                                                                                                                                                     |
-| ----------------------------- | ----- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Backend: unit                 | 75    | fractional keys (including hundreds of random sequences via Hypothesis), tokens and signed links, file validation, thumbnails, CSV injection                                                        |
-| Backend: integration          | 17    | on real PostgreSQL: 5 workers on one queue — each job runs exactly once; retries and delays; transactional events; key sorting in the database; a dropped LISTEN connection; migrations down and up |
-| Backend: API and WebSocket    | 104   | permissions, version conflicts, card order, uploads, export; socket auth, presence, catch-up after reconnect, disconnecting a removed member                                                        |
-| Frontend: unit and components | 83    | applying events to data, move calculation, socket reconnection (delays, ping, offline), the edit-conflict screen, live events through a mocked WebSocket                                            |
-| E2E                           | 12    | **two browsers at once**: one user's card appears for the other, drag and drop, presence, edit conflict; thumbnail from a background job; CSV download; mobile layout                               |
+| Level                         | Count | What they check                                                                                                                                                                                                                  |
+| ----------------------------- | ----- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Backend: unit                 | 78    | fractional keys (including hundreds of random sequences via Hypothesis), tokens and signed links, file validation, thumbnails, CSV injection                                                                                     |
+| Backend: integration          | 17    | on real PostgreSQL: 5 workers on one queue — each job runs exactly once; retries and delays; transactional events; key sorting in the database; a dropped LISTEN connection; migrations down and up                              |
+| Backend: API and WebSocket    | 120   | brute-force protection and security headers, permissions, version conflicts, card order, uploads, export; socket auth, presence, catch-up after reconnect, disconnecting a removed member                                        |
+| Frontend: unit and components | 83    | applying events to data, move calculation, socket reconnection (delays, ping, offline), the edit-conflict screen, live events through a mocked WebSocket                                                                         |
+| E2E                           | 14    | accessibility (axe, WCAG 2.1 AA) in light and dark themes; **two browsers at once**: one user's card appears for the other, drag and drop, presence, edit conflict; thumbnail from a background job; CSV download; mobile layout |
 
 Backend coverage is 98 %, frontend 89 % of lines.
 
