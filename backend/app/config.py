@@ -1,7 +1,15 @@
+import os
 from typing import Literal
 
-from pydantic import field_validator, model_validator
+from pydantic import Field, field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+
+def on_render() -> bool:
+    """Render сам задаёт каждому сервису RENDER=true. По нему включаются настройки живого сайта:
+    доверие к прокси Render и Cloudflare и запрет секретов по умолчанию. Явная переменная окружения
+    по-прежнему важнее — значения по умолчанию лишь не дают забыть их в панели."""
+    return os.environ.get("RENDER", "").lower() == "true"
 
 
 class Settings(BaseSettings):
@@ -10,7 +18,10 @@ class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
     # production — живой сайт: там значения по умолчанию из этого файла запрещены (см. no_dev_secrets_in_production)
-    environment: Literal["development", "test", "production"] = "development"
+    # На Render — production по умолчанию: живой сайт не должен зависеть от того, перенесли ли переменные
+    # из render.yaml в панель (у сервиса, созданного не через Blueprint, они не применяются)
+    environment: Literal["development", "test", "production"] = Field(
+        default_factory=lambda: "production" if on_render() else "development")
 
     database_url: str = "postgresql+psycopg://birge:birge@localhost:5432/birge"
     db_pool_size: int = 10
@@ -29,13 +40,14 @@ class Settings(BaseSettings):
     # События доски хранятся сутки: этого хватает, чтобы догнать пропущенное после обрыва связи
     event_retention_hours: int = 24
     ws_auth_timeout_seconds: float = 5.0
-    # Render ставит API за прокси: адрес клиента — в X-Forwarded-For. Локально заголовку не доверяем
-    trust_proxy: bool = False
-    # Сколько наших прокси дописывают адрес в конец X-Forwarded-For. На Render: «…, клиент, Cloudflare» — 2
-    proxy_hops: int = 1
-    # Заголовок с адресом клиента от доверенного прокси, например true-client-ip у Cloudflare (Render).
+    # За прокси Render адрес клиента — в X-Forwarded-For. Локально заголовку не доверяем; на Render — доверяем
+    trust_proxy: bool = Field(default_factory=on_render)
+    # Сколько наших прокси дописывают адрес в конец X-Forwarded-For. На Render («…, клиент, Cloudflare») — 2
+    proxy_hops: int = Field(default_factory=lambda: 2 if on_render() else 1)
+    # Заголовок с адресом клиента от доверенного прокси. На Render — cf-connecting-ip: его ставит Cloudflare
+    # на любом тарифе и перезаписывает, если клиент прислал свой.
     # Пусто — не используется: без такого прокси заголовок подделает кто угодно
-    client_ip_header: str = ""
+    client_ip_header: str = Field(default_factory=lambda: "cf-connecting-ip" if on_render() else "")
     login_attempts: int = 5  # неудачных входов за 15 минут на пару «email + IP»
     registrations_per_hour: int = 10  # с одного IP
     timezone: str = "Asia/Almaty"  # время в выгрузке — местное, а не UTC
