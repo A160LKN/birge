@@ -25,6 +25,10 @@ export interface SocketOptions {
 export const PING_EVERY = 25_000;
 export const PONG_TIMEOUT = 10_000;
 export const MAX_DELAY = 15_000;
+/** Сколько последних номеров событий помнить для защиты от дублей. Дубли приходят рядом
+ * (догонялка и живая рассылка одновременно), а вкладка с доской может быть открыта неделями —
+ * без предела множество росло бы с каждым событием. Столько же помнит сервер (hub.py). */
+export const SEEN_LIMIT = 1000;
 
 const FINAL_CODES: Record<number, CloseReason> = { 4401: 'unauthorized', 4403: 'removed', 4404: 'gone' };
 
@@ -86,7 +90,14 @@ export class BoardSocket {
       ws.send(JSON.stringify({ type: 'auth', token, last_event_id: this.lastEventId }));
     };
     ws.onmessage = (message: MessageEvent<string>) => {
-      if (ws === this.ws) this.handle(JSON.parse(message.data) as ServerMessage);
+      if (ws !== this.ws) return;
+      let parsed: ServerMessage;
+      try {
+        parsed = JSON.parse(message.data) as ServerMessage;
+      } catch {
+        return; // битое сообщение пропускаем: обработчик не должен падать и терять следующие события
+      }
+      this.handle(parsed);
     };
     ws.onclose = (event: CloseEvent) => {
       if (ws === this.ws) this.handleClose(event.code);
@@ -116,6 +127,8 @@ export class BoardSocket {
         // Одно событие может прийти дважды (догонялка и живая рассылка) — применяем один раз
         if (this.seen.has(message.id)) return;
         this.seen.add(message.id);
+        // Set хранит порядок добавления: первым удаляется самый старый номер
+        if (this.seen.size > SEEN_LIMIT) this.seen.delete(this.seen.values().next().value as number);
         this.lastEventId = Math.max(this.lastEventId, message.id);
         this.options.onEvent(message);
     }
