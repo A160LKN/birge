@@ -4,9 +4,11 @@ import logging
 import secrets
 import time
 
+from fastapi import HTTPException
 from starlette.middleware.base import BaseHTTPMiddleware, RequestResponseEndpoint
 from starlette.requests import Request
 from starlette.responses import JSONResponse, Response
+from starlette.types import ASGIApp, Message, Receive, Scope, Send
 
 from app.config import settings
 
@@ -30,6 +32,50 @@ DOCS_CSP = ("default-src 'none'; script-src 'self' 'unsafe-inline' https://cdn.j
             "connect-src 'self'; frame-ancestors 'none'")
 
 
+TOO_LARGE = {"error": {"code": "payload_too_large", "message": "Слишком большой запрос"}}
+
+
+class BodyTooLarge(HTTPException):
+    """Наследник HTTPException: FastAPI пропускает его как есть, а не превращает в 400 «ошибка разбора тела»."""
+
+    def __init__(self) -> None:
+        super().__init__(status_code=413, detail="payload_too_large")
+
+
+async def body_too_large_handler(_: Request, __: Exception) -> JSONResponse:
+    return JSONResponse(TOO_LARGE, status_code=413)
+
+
+class BodyLimitMiddleware:
+    """Лимит размера тела для запросов без Content-Length.
+
+    Заголовок Content-Length проверяет HttpMiddleware ещё до чтения тела. Но клиент может прислать тело
+    кусками (Transfer-Encoding: chunked) без этого заголовка — тогда разбор формы записал бы на диск
+    файл любого размера, и read_limited отклонил бы его, только когда место уже занято. Здесь байты
+    считаются по мере чтения, и запрос обрывается, как только лимит превышен.
+    """
+
+    def __init__(self, app: ASGIApp, limit: int | None = None) -> None:
+        self.app, self.limit = app, limit or MAX_BODY
+
+    async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
+        if scope["type"] != "http":
+            await self.app(scope, receive, send)
+            return
+        received = 0
+
+        async def limited() -> Message:
+            nonlocal received
+            message = await receive()
+            if message["type"] == "http.request":
+                received += len(message.get("body", b""))
+                if received > self.limit:
+                    raise BodyTooLarge()
+            return message
+
+        await self.app(scope, limited, send)
+
+
 class HttpMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next: RequestResponseEndpoint) -> Response:
         incoming = request.headers.get("x-request-id", "")
@@ -41,8 +87,7 @@ class HttpMiddleware(BaseHTTPMiddleware):
 
         length = request.headers.get("content-length")
         if length and length.isdigit() and int(length) > MAX_BODY:
-            body = {"error": {"code": "payload_too_large", "message": "Слишком большой запрос"}}
-            response: Response = JSONResponse(body, status_code=413)
+            response: Response = JSONResponse(TOO_LARGE, status_code=413)
         else:
             try:
                 response = await call_next(request)

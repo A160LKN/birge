@@ -1,4 +1,11 @@
-import { BoardSocket, PING_EVERY, PONG_TIMEOUT, reconnectDelay, type SocketOptions } from './socket';
+import {
+  BoardSocket,
+  PING_EVERY,
+  PONG_TIMEOUT,
+  reconnectDelay,
+  SEEN_LIMIT,
+  type SocketOptions,
+} from './socket';
 
 /** Поддельный WebSocket: тест сам решает, когда сервер ответил, а когда связь оборвалась. */
 class FakeSocket {
@@ -96,6 +103,25 @@ it('одно событие дважды применяется один раз'
   latest().receive(event(42));
   expect(options.onEvent).toHaveBeenCalledTimes(2);
   expect(socket.position).toBe(42);
+});
+
+it('память для защиты от дублей не растёт бесконечно в долго открытой вкладке', () => {
+  const { options, socket } = setup();
+  latest().open();
+  for (let id = 41; id < 41 + SEEN_LIMIT * 3; id++) latest().receive(event(id));
+  expect(options.onEvent).toHaveBeenCalledTimes(SEEN_LIMIT * 3);
+  const seen = (socket as unknown as { seen: Set<number> }).seen;
+  expect(seen.size).toBe(SEEN_LIMIT);
+  latest().receive(event(40 + SEEN_LIMIT * 3)); // свежий дубль по-прежнему отбрасывается
+  expect(options.onEvent).toHaveBeenCalledTimes(SEEN_LIMIT * 3);
+});
+
+it('битое сообщение не ломает обработку следующих', () => {
+  const { options } = setup();
+  latest().open();
+  latest().onmessage?.({ data: '{не json' });
+  latest().receive(event(41));
+  expect(options.onEvent).toHaveBeenCalledTimes(1);
 });
 
 it('после обрыва переподключается с растущей паузой и догоняет с последнего события', () => {

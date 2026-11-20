@@ -97,6 +97,34 @@ def test_huge_body_is_rejected_before_parsing(client):
     assert (r.status_code, r.json()["error"]["code"]) == (413, "payload_too_large")
 
 
+def test_huge_chunked_body_without_content_length_is_rejected(client):
+    """Тело кусками без Content-Length: лимит срабатывает по мере чтения, а не после записи всего на диск."""
+    def chunks():
+        yield b"{"
+        for _ in range(7):
+            yield b" " * (1024 * 1024)  # 7 МБ при лимите чуть больше 5 МБ
+        yield b"}"
+
+    r = client.post("/auth/login", content=chunks(), headers={"Content-Type": "application/json"})
+    assert (r.status_code, r.json()["error"]["code"]) == (413, "payload_too_large")
+
+
+def test_huge_chunked_upload_is_rejected(client, alice, team):
+    card = alice.card(team["columns"][0]["id"], "Карточка")
+    boundary = "x-boundary"
+
+    def chunks():
+        yield (f"--{boundary}\r\nContent-Disposition: form-data; name=\"file\"; filename=\"big.txt\"\r\n"
+               "Content-Type: text/plain\r\n\r\n").encode()
+        for _ in range(7):
+            yield b"a" * (1024 * 1024)
+        yield f"\r\n--{boundary}--\r\n".encode()
+
+    r = client.post(f"/cards/{card['id']}/attachments", content=chunks(),
+                    headers={**alice.headers, "Content-Type": f"multipart/form-data; boundary={boundary}"})
+    assert r.status_code == 413
+
+
 def test_unexpected_error_hides_details_but_gives_request_id(client):
     @app.get("/boom-for-test")
     def boom():
