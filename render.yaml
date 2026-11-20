@@ -15,6 +15,9 @@ services:
         sync: false            # адрес базы из Neon
       - key: CORS_ORIGINS
         sync: false            # адрес фронтенда на Vercel
+      # Живой сайт: секреты по умолчанию запрещены, без JWT_SECRET сервер не стартует
+      - key: ENVIRONMENT
+        value: production
       - key: JWT_SECRET
         generateValue: true
       # Адрес клиента для лимитов входа и регистрации (см. app/ratelimit.py:client_ip).

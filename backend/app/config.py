@@ -1,4 +1,6 @@
-from pydantic import field_validator
+from typing import Literal
+
+from pydantic import field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -6,6 +8,9 @@ class Settings(BaseSettings):
     """Настройки из переменных окружения (или файла .env)."""
 
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
+
+    # production — живой сайт: там значения по умолчанию из этого файла запрещены (см. no_dev_secrets_in_production)
+    environment: Literal["development", "test", "production"] = "development"
 
     database_url: str = "postgresql+psycopg://birge:birge@localhost:5432/birge"
     db_pool_size: int = 10
@@ -34,6 +39,14 @@ class Settings(BaseSettings):
     login_attempts: int = 5  # неудачных входов за 15 минут на пару «email + IP»
     registrations_per_hour: int = 10  # с одного IP
     timezone: str = "Asia/Almaty"  # время в выгрузке — местное, а не UTC
+
+    @model_validator(mode="after")
+    def no_dev_secrets_in_production(self) -> "Settings":
+        """Секрет по умолчанию опубликован в репозитории: с ним любой подпишет себе токен.
+        Забыли задать JWT_SECRET на живом сайте — сервер не стартует, а не работает с известным ключом."""
+        if self.environment == "production" and (self.jwt_secret.startswith("dev-") or len(self.jwt_secret) < 32):
+            raise ValueError("JWT_SECRET по умолчанию или короче 32 символов нельзя использовать в production")
+        return self
 
     @field_validator("database_url")
     @classmethod
