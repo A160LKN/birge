@@ -1,4 +1,5 @@
 """Пароли и JWT-токены."""
+import asyncio
 import base64
 import hashlib
 import hmac
@@ -33,6 +34,18 @@ def verify_password(password: str, stored: str) -> bool:
         return False
     digest = hashlib.scrypt(password.encode(), salt=base64.b64decode(salt_b64), **_SCRYPT)
     return hmac.compare_digest(digest, base64.b64decode(digest_b64))
+
+
+# scrypt занимает процессор на десятки миллисекунд. Вызванный прямо в async-обработчике, он
+# останавливает весь цикл событий: ответы API и рассылку WebSocket всех досок. Поток входов
+# с разными email превратился бы в отказ в обслуживании. Поэтому в async-коде — только эти обёртки.
+
+async def hash_password_async(password: str) -> str:
+    return await asyncio.to_thread(hash_password, password)
+
+
+async def verify_password_async(password: str, stored: str) -> bool:
+    return await asyncio.to_thread(verify_password, password, stored)
 
 
 def create_token(user_id: int, now: datetime | None = None) -> str:

@@ -26,6 +26,11 @@ class Settings(BaseSettings):
     ws_auth_timeout_seconds: float = 5.0
     # Render ставит API за прокси: адрес клиента — в X-Forwarded-For. Локально заголовку не доверяем
     trust_proxy: bool = False
+    # Сколько наших прокси дописывают адрес в конец X-Forwarded-For. На Render: «…, клиент, Cloudflare» — 2
+    proxy_hops: int = 1
+    # Заголовок с адресом клиента от доверенного прокси, например true-client-ip у Cloudflare (Render).
+    # Пусто — не используется: без такого прокси заголовок подделает кто угодно
+    client_ip_header: str = ""
     login_attempts: int = 5  # неудачных входов за 15 минут на пару «email + IP»
     registrations_per_hour: int = 10  # с одного IP
     timezone: str = "Asia/Almaty"  # время в выгрузке — местное, а не UTC
