@@ -91,7 +91,8 @@ async def board_csv(session: AsyncSession, board_id: int) -> bytes:
     writer = csv.writer(out, delimiter=";")  # «;» — Excel с русской локалью откроет без мастера импорта
     writer.writerow(CSV_HEADER)
     for column, card, assignee, n_comments, n_files in rows:
-        writer.writerow([column, _cell(card.title), _cell(card.description), assignee or "",
+        # Все тексты от пользователей — через _cell: формулой может стать и название колонки, и имя исполнителя
+        writer.writerow([_cell(column), _cell(card.title), _cell(card.description), _cell(assignee or ""),
                          card.due_date.strftime("%d.%m.%Y") if card.due_date else "", n_comments, n_files,
                          card.updated_at.astimezone(ZoneInfo(settings.timezone)).strftime("%d.%m.%Y %H:%M")])
     return ("﻿" + out.getvalue()).encode("utf-8")  # BOM: Excel поймёт, что это UTF-8
