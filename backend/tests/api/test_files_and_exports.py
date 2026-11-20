@@ -164,6 +164,23 @@ def test_export_is_prepared_in_background(alice, bob, team, run_jobs):
     assert rows[2][:2] == ["В работе", "Сверстать"]
 
 
+def test_export_neutralises_formulas_in_every_text_field(alice, team, make_user, run_jobs):
+    """Формулой может стать любой текст от пользователя: название колонки и имя исполнителя тоже."""
+    mallory = make_user('=HYPERLINK("http://evil","Мария")')
+    assert alice.post(f"/boards/{team['id']}/members", json={"email": mallory.email}).status_code == 201
+    column = team["columns"][0]["id"]
+    assert alice.patch(f"/columns/{column}", json={"title": "@SUM(1+1)"}).status_code == 200
+    card = alice.card(column, "+7 777 000")
+    alice.patch(f"/cards/{card['id']}", json={"version": 1, "assignee_id": mallory.id})
+
+    export_id = alice.post(f"/boards/{team['id']}/exports").json()["id"]
+    run_jobs()
+    content = alice.get(f"/exports/{export_id}/download").content.decode("utf-8-sig")
+    row = next(r for r in csv.reader(io.StringIO(content), delimiter=";") if r[1].endswith("777 000"))
+    assert row[:2] == ["'@SUM(1+1)", "'+7 777 000"]
+    assert row[3] == "'=HYPERLINK(\"http://evil\",\"Мария\")"
+
+
 def test_export_belongs_to_the_person_who_requested_it(alice, bob, team, run_jobs):
     export_id = alice.post(f"/boards/{team['id']}/exports").json()["id"]
     run_jobs()
