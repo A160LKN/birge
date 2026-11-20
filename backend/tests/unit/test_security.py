@@ -1,3 +1,6 @@
+import asyncio
+import threading
+import time
 from datetime import UTC, datetime, timedelta
 
 import jwt
@@ -9,9 +12,11 @@ from app.security import (
     LINK_TTL_SECONDS,
     create_token,
     hash_password,
+    hash_password_async,
     signed_url,
     user_id_from_token,
     verify_password,
+    verify_password_async,
     verify_signature,
 )
 
@@ -25,6 +30,36 @@ def test_password_hash_is_salted_and_verifiable():
     assert verify_password("пароль-123", first)
     assert not verify_password("пароль-124", first)
     assert not verify_password("пароль-123", "испорченный хеш")
+
+
+async def test_password_hashing_does_not_block_event_loop(monkeypatch):
+    """scrypt идёт в отдельном потоке: пока он считает, цикл событий отвечает остальным."""
+    import app.security as security
+
+    loop_thread = threading.get_ident()
+    threads = []
+    real_scrypt = security.hashlib.scrypt
+
+    def slow_scrypt(*args, **kwargs):
+        threads.append(threading.get_ident())
+        time.sleep(0.2)  # «тяжёлый» хеш
+        return real_scrypt(*args, **kwargs)
+
+    monkeypatch.setattr(security.hashlib, "scrypt", slow_scrypt)
+    ticks = 0
+
+    async def ticker():
+        nonlocal ticks
+        while True:
+            await asyncio.sleep(0.01)
+            ticks += 1
+
+    task = asyncio.create_task(ticker())
+    stored = await hash_password_async("пароль-123")
+    assert await verify_password_async("пароль-123", stored)
+    task.cancel()
+    assert loop_thread not in threads, "scrypt не выполнялся в потоке цикла событий"
+    assert ticks >= 10, "пока считался хеш, цикл событий продолжал работать"
 
 
 def test_token_roundtrip():

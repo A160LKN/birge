@@ -17,6 +17,14 @@ services:
         sync: false            # адрес фронтенда на Vercel
       - key: JWT_SECRET
         generateValue: true
+      # Адрес клиента для лимитов входа и регистрации (см. app/ratelimit.py:client_ip).
+      # Render стоит за Cloudflare: True-Client-IP выставляет Cloudflare, X-Forwarded-For — «…, клиент, Cloudflare»
+      - key: CLIENT_IP_HEADER
+        value: true-client-ip
+      - key: TRUST_PROXY
+        value: "true"
+      - key: PROXY_HOPS
+        value: "2"
       - key: DB_POOL_SIZE
         value: "5"
       - key: DB_MAX_OVERFLOW

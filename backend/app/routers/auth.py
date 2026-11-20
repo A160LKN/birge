@@ -8,7 +8,7 @@ from app.db import get_session
 from app.errors import AppError
 from app.models import User
 from app.schemas import LoginIn, RegisterIn, TokenOut, UserOut
-from app.security import create_token, current_user, hash_password, verify_password
+from app.security import create_token, current_user, hash_password, hash_password_async, verify_password_async
 
 router = APIRouter(prefix="/auth", tags=["Вход"])
 _DUMMY_HASH = hash_password("timing-equaliser")
@@ -31,7 +31,7 @@ async def register(data: RegisterIn, request: Request, session: AsyncSession = D
     ratelimit.registrations.check(ip)
     check_password_strength(data.password, data.email)
     ratelimit.registrations.hit(ip)
-    user = User(email=data.email, name=data.name, password_hash=hash_password(data.password))
+    user = User(email=data.email, name=data.name, password_hash=await hash_password_async(data.password))
     session.add(user)
     try:
         await session.commit()
@@ -48,7 +48,7 @@ async def login(data: LoginIn, request: Request, session: AsyncSession = Depends
     ratelimit.failed_logins_per_email.check(data.email)
     user = await session.scalar(select(User).where(User.email == data.email))
     # Пароль проверяется и для несуществующего email: по времени ответа не узнать, кто зарегистрирован
-    valid = verify_password(data.password, user.password_hash if user else _DUMMY_HASH)
+    valid = await verify_password_async(data.password, user.password_hash if user else _DUMMY_HASH)
     if user is None or not valid:
         ratelimit.failed_logins.hit(key)
         ratelimit.failed_logins_per_email.hit(data.email)
